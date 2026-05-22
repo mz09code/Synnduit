@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Serilog; // Add Serilog namespace
 using Synnduit;
 using Synnduit.Deployment;
 using Synnduit.Logging;
@@ -7,18 +8,49 @@ using Synnduit.Properties;
 using System.ComponentModel.Composition;
 using System.Reflection;
 
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"))
+    .AddUserSecrets(GetSecretId(args), true)
+    .Build();
+
+// Configure Serilog from appsettings.json
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(configuration)
+    .CreateLogger();
+    
+TaskScheduler.UnobservedTaskException += (sender, e) =>
+{
+    Log.Error(e.Exception, "Unobserved task exception");
+    e.SetObserved(); // Prevent crash
+};
+
 try
 {
+    Log.Information($"Synnduit Application starting...");
     var runName = GetRunName(args);
     var secretId = GetSecretId(args);
-    var configuration =
-        new ConfigurationBuilder()
-        .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"))
-        .AddUserSecrets(secretId, true)
-        .Build();
     DeploymentExecutorFactory
-        .CreateDeploymentExecutor(configuration, typeof(Repository).Assembly)
+         .CreateDeploymentExecutor(configuration, typeof(Repository).Assembly)
         .Deploy();
+    Log.Information($"Deployment completed for run {runName}.");
+
+    //
+
+    //var explicitAssemblies = new[]
+    //{
+    //    typeof(Repository).Assembly, // Synnduit.Persistence.SqlServer
+    //    typeof(ConsoleLogger<>).Assembly, // Synnduit.ConsoleLogger
+    //    typeof(Synnduit.Bootstrapper).Assembly, // Synnduit.Engine
+    //};
+    //RunnerFactory
+    //   .CreateRunner(
+    //       configuration,
+    //       runName,
+    //       explicitAssemblies)
+    //   .Run();
+
+    //
+
     RunnerFactory
         .CreateRunner(
             configuration,
@@ -26,6 +58,7 @@ try
             typeof(Repository).Assembly,
             typeof(ConsoleLogger<>).Assembly)
         .Run();
+    Log.Information("Runner completed successfully.");
     return 0;
 }
 catch (ReflectionTypeLoadException reflectionTypeLoadException)
@@ -41,8 +74,12 @@ catch (CompositionException compositionException)
 }
 catch (Exception exception)
 {
-    Console.WriteLine(exception);
+    Log.Error(exception, "Unexpected exception occurred.");
     return 1;
+}
+finally
+{
+    Log.CloseAndFlush(); // Ensure logs are flushed
 }
 
 static string GetRunName(string[] args)
