@@ -28,7 +28,7 @@
 	<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 	<PackageReference Include="Synnduit.ConsoleLogger" Version="0.9.0" />
 	<PackageReference Include="Synnduit.Core" Version="0.9.0" />
-	<PackageReference Include="Synnduit.Engine" Version="0.9.0" />
+	<PackageReference Include="Synnduit.Engine" Version="0.9.1" />
 	<PackageReference Include="Synnduit.Persistence" Version="0.9.0" />
 	<PackageReference Include="Synnduit.Persistence.SqlServer" Version="0.9.0" />
   </ItemGroup>
