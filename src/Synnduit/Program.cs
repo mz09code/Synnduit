@@ -72,6 +72,22 @@ catch (CompositionException compositionException)
     PrintMultiPartExceptionDetails(compositionException, compositionException.RootCauses);
     return 1;
 }
+catch (PercentageThresholdAbortException percentageThresholdAbortException)
+{
+    Log.Error(
+        "Run aborted: {Percentage:P2} of entities were identified for processing, "
+            + "exceeding the configured threshold of {Threshold:P2}.",
+        percentageThresholdAbortException.Percentage,
+        percentageThresholdAbortException.Threshold);
+    return 2;
+}
+catch (CountThresholdAbortException countThresholdAbortException)
+{
+    Log.Error(
+        "Run aborted: the exception count threshold of {Threshold} was reached.",
+        countThresholdAbortException.Threshold);
+    return 2;
+}
 catch (Exception exception)
 {
     Log.Error(exception, "Unexpected exception occurred.");
